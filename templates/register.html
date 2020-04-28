@@ -11,25 +11,28 @@
 
     <div class="col-md-12 bg-light rounded p-5 my-5">
       <div class="h1">Create a new account</div>
-      <div class="form-group">
-        <label>Email Address </label>
-        <input type="email" class="form-control" />
-      </div>
+      <form action="/register" method="post">
       <div class="form-group">
         <label>User Name</label>
-        <input type="text" class="form-control" />
+        <input type="text" class="form-control" name="username"/>
       </div>
       <div class="form-group">
         <label>Password </label>
-        <input type="password" class="form-control" />
+        <input type="password" class="form-control" name="password"/>
       </div>
       <div class="form-group">
         <label>Confirm Password</label>
-        <input type="password" class="form-control" />
+        <input type="password" class="form-control" name="confirmation"/>
       </div>
       <button type="submit" class="btn btn-primary">Submit</button>
+      </form>
     </div>
   </div>
+  <div class="alert alert-danger text-center" role="alert">
+            {{ message }}
+  </div>
+
 </div>
+
 
 {% endblock %}

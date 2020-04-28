@@ -19,6 +19,16 @@
     <span class="navbar-toggler-icon"></span>
   </button>
   <div class="collapse navbar-collapse" id="navbarNav">
+
+    {% if session.userid %}
+
+    <ul class="navbar-nav ml-auto">
+      <li class="nav-item"><a class="nav-link" href="#">{{ session.username }}</a></li>
+      <li class="nav-item"><a class="nav-link" href="/sign_out">Sign Out</a></li>
+    </ul>
+
+    {% else %}
+
     <ul class="navbar-nav mr-auto">
       <li class="nav-item">
         <a class="nav-link" href="/sign_in">Sign In</a>
@@ -27,8 +37,16 @@
         <a class="nav-link" href="/register">Register</a>
       </li>
     </ul>
+
+    {% endif %}
   </div>
+
 </nav>
+{% if get_flashed_messages() %}
+      <div class="alert alert-info text-center" role="alert">
+          {{ get_flashed_messages() | join(" ") }}
+      </div>
+{% endif %}
 
 {% block content %}
 {% endblock %}

@@ -1,8 +1,10 @@
 import os
-from flask import Flask, session, render_template, request
+from flask import Flask, session, render_template, request, flash, redirect
 from flask_session import Session
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
+from passlib.hash import sha256_crypt as hasher
+
 
 app = Flask(__name__)
 
@@ -24,13 +26,71 @@ db = scoped_session(sessionmaker(bind=engine))
 def index():
     return render_template("index.html", message="your search results will appear here")
 
-@app.route("/sign_in")
+@app.route("/sign_in",methods=['GET','POST'])
 def sign_in():
+    session.clear()
+    if request.method == "POST":
+        #check for username
+        if not request.form.get("username"):
+            return render_template("sign_in.html",message="err: username field is empty")
+        #check for password
+        if not request.form.get("password"):
+            return render_template("sign_in.html",message="err: password field is empty")
+        #check if username in table
+        #verify password
+        entry = db.execute("SELECT * FROM users WHERE username = :username",
+                            {"username": request.form.get('username')}).fetchone()
+        if entry == None:
+            return render_template("sign_in.html",message="err: user does not exist")
+
+        if not hasher.verify(request.form.get("password"),entry[2]):
+            return render_template("sign_in.html",message="err: incorrect password")
+
+        #assign session variables
+        session['userid'] = entry[0]
+        session['username'] = entry[1]
+
+        #redirect to index
+        return redirect('/')
+
     return render_template("sign_in.html")
 
-@app.route("/register")
+@app.route("/sign_out")
+def sign_out():
+    session.clear()
+    return redirect("/")
+
+@app.route("/register",methods=["GET","POST"])
 def register():
-    return render_template("register.html")
+    session.clear()
+    if request.method == "POST":
+        #check for username
+        if not request.form.get("username"):
+            return render_template("register.html",message="err: please enter a username")
+
+        user_exists = db.execute("SELECT * FROM users WHERE username = :username",{"username":request.form.get("username")}).fetchall()
+
+        #check if user already exists
+        if user_exists:
+            return render_template("register.html",message="err: username already exists; please enter another username")
+
+        #check if password and confirmation submitted
+        if not request.form.get("password") or not request.form.get("confirmation"):
+            return render_template("register.html",message="err: please make sure password and confirmation fields are not empty")
+
+        #check if password == confirmation
+        if request.form.get("password") != request.form.get("confirmation"):
+            return render_template("register.html",message="err: password and confirmation mismatch")
+
+        #insert entry and commit
+        db.execute("INSERT INTO users (username,password) VALUES (:username, :password)",{"username":request.form.get("username"),"password":hasher.hash(request.form.get("password"))})
+        db.commit()
+
+        #flash user created
+        flash('account created','info')
+        return redirect("/sign_in")
+    #for get
+    return render_template("register.html",message="")
 
 @app.route("/search",methods=["GET"])
 def search():
