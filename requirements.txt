@@ -4,6 +4,7 @@ psycopg2-binary
 SQLAlchemy
 passlib
 requests
+Werkzeug
 
 #Heroku
 gunicorn
