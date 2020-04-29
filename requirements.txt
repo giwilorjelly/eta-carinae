@@ -3,3 +3,7 @@ Flask-Session
 psycopg2-binary
 SQLAlchemy
 passlib
+
+#Heroku
+gunicorn
+psycopg2
