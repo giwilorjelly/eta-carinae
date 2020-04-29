@@ -11,13 +11,16 @@
     <div class="col-md-12 bg-light rounded p-5 my-5">
       <div class="h1">BOOK REVIEW</div>
       <div class="h6">
-        Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat
+        Welcome to my book review page.
+        Feel free to checkout and post reviews of books you like.
+        You can start by using the search bar below.<br>
+        -Giwil
       </div>
 
       <form action="/search" method="GET">
       <div class="form-group">
         <label style="color:blue">Search for a Book</label>
-        <input type="text" class="form-control" name="book"/>
+        <input type="text" class="form-control" name="book" placeholder="eg.Cosmos"/>
       </div>
 
       <button type="submit" class="btn btn-primary">Search</button>
@@ -27,19 +30,19 @@
     <div class="container">
       <div class="h3">Search Results<br></div>
 
-      <div class="h6">{{message}}</div>
+      <div class="h6">{{messages}}</div>
       <div class="dropdown-divider"></div>
 
 
       <div class="row">
         {% for book in books %}
-        <div class="col-md-4 bg-light rounded p-5 my-5">
-        <div class="media">
-            <div class="media-body">
-              <h5 class="mt-0">{{book['title']}}</h5>
-              <h6>{{book['author']}}</h6>
-              <h6>{{book['year']}}</h6>
-              <h6>{{book['isbn']}}</h6>
+        <div class="col-md-4 bg-light p-10 my-5">
+        <div class="media border border-primary rounded-lg">
+            <div class="media-body mx-2">
+              <h5 class="mt-0">  {{book['title']}}</h5>
+              <h6>Author: {{book['author']}}</h6>
+              <h6>Published: {{book['year']}}</h6>
+              <h6>ISBN: {{book['isbn']}}</h6>
               <a href="/book/{{book['isbn']}}" class="card-link">Go to book page</a>
             </div>
         </div>

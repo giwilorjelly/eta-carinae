@@ -1,4 +1,4 @@
-import os
+import os,requests,json,datetime
 from flask import Flask, session, render_template, request, flash, redirect
 from flask_session import Session
 from sqlalchemy import create_engine
@@ -24,7 +24,7 @@ db = scoped_session(sessionmaker(bind=engine))
 
 @app.route("/")
 def index():
-    return render_template("index.html", message="your search results will appear here")
+    return render_template("index.html", messages="your search results will appear here")
 
 @app.route("/sign_in",methods=['GET','POST'])
 def sign_in():
@@ -86,9 +86,8 @@ def register():
         db.execute("INSERT INTO users (username,password) VALUES (:username, :password)",{"username":request.form.get("username"),"password":hasher.hash(request.form.get("password"))})
         db.commit()
 
-        #flash user created
-        flash('account created','info')
-        return redirect("/sign_in")
+
+        return render_template("sign_in.html",message="user successfully created")
     #for get
     return render_template("register.html",message="")
 
@@ -109,3 +108,62 @@ def search():
     books = results.fetchall()
 
     return render_template("index.html",books=books)
+
+@app.route("/book/<isbn>",methods=["GET","POST"])
+def book(isbn):
+    if request.method == "GET":
+
+        """preparing book data"""
+        #get book data from books table
+        info = db.execute("SELECT * FROM books WHERE isbn=:isbn",{"isbn":isbn}).fetchall()
+
+        #initialize key
+        key = os.getenv("GOODREADS_KEY")
+
+        #read api
+
+
+        query = requests.get("https://www.goodreads.com/book/review_counts.json",
+                params={"key": key, "isbns": isbn})
+        response = query.json()
+        response = response['books'][0]
+        """
+        Sample Response:
+        {'id': 55030, 'isbn': '0375508325',
+         'isbn13': '9780375508325', 'ratings_count': 101357,
+         'reviews_count': 242685, 'text_reviews_count': 2136,
+          'work_ratings_count': 108939, 'work_reviews_count': 264246,
+          'work_text_reviews_count': 2931, 'average_rating': '4.37'}
+        """
+
+        #append api info to book info
+        info.append(response)
+
+        """preparing book review data"""
+        reviews = db.execute("SELECT content,rating,username,date FROM reviews JOIN users ON reviews.userid = users.id WHERE isbn = :isbn",{"isbn":isbn}).fetchall()
+        if reviews == []:
+            message = "No reviews posted for this book yet."
+        else:
+            message = ""
+        return render_template("book.html",bookinfo=info,message=message,reviews=reviews)
+
+    #for POST
+    else:
+        #check if user has already posted review
+        print("post called")
+        review_posted = db.execute("SELECT * FROM reviews WHERE userid = :userid AND isbn = :isbn",
+        {"userid":session["userid"],"isbn":isbn}).fetchall()
+        if review_posted != []:
+            print("review already posted", review_posted)
+            return redirect("/book/"+isbn)
+
+        #execute and commit review
+        db.execute("INSERT INTO reviews (userid, isbn, date, content, rating) VALUES (:userid, :isbn, :date, :content, :rating)",
+        {"userid":session['userid'],
+        "isbn":isbn,
+        "date":datetime.datetime.now(),
+        "content":request.form.get("comment"),
+        "rating":request.form.get("rating")})
+        db.commit()
+        print("review posted")
+        return redirect("/book/"+isbn)
