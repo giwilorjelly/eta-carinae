@@ -1,5 +1,5 @@
 import os,requests,json,datetime
-from flask import Flask, session, render_template, request, flash, redirect
+from flask import Flask, session, render_template, request, flash, redirect, jsonify
 from flask_session import Session
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -167,3 +167,39 @@ def book(isbn):
         db.commit()
         print("review posted")
         return redirect("/book/"+isbn)
+
+@app.route("/api/<isbn>",methods=["GET"])
+def api(isbn):
+    """
+    Sample:
+    {
+    "title": "Memory",
+    "author": "Doug Lloyd",
+    "year": 2015,
+    "isbn": "1632168146",
+    "review_count": 28,
+    "average_score": 5.0
+    }
+    """
+    #fetch data from reviews and books and users
+    result = db.execute("SELECT title,author,year,reviews.isbn as isbn,COUNT(reviews.reviewid) as review_count, AVG(reviews.rating) as average_score FROM books JOIN reviews on books.isbn = reviews.isbn WHERE books.isbn = :isbn GROUP BY title,author,year,reviews.isbn",{"isbn":isbn}).fetchall()
+
+    #if invalid isbn return error
+    if result == []:
+        return jsonify({"Error": "Invalid book ISBN"}), 404
+
+    #convert to dictionary
+    result = result[0]
+    result = {
+    "title": result[0],
+    "author": result[1],
+    "year": result[2],
+    "isbn": result[3],
+    "review_count": result[4],
+    "average_score": float('%.2f'%(result[5]))
+    }
+
+
+    #return json
+
+    return jsonify(result)
