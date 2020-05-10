@@ -110,29 +110,30 @@ def add_book():
 
             #fetch data from GOODREADS
             try:
-                key = os.getenv("GOODREADS_KEY")
-                url = f"https://www.goodreads.com/search/index.xml?key={key}&q={isbn}"
 
-                var_url = urlopen(url)
-                xmldoc = parse(var_url)
-                r = xmldoc.getroot()
-                if r[1][3].text!='1':
-                    return render_template("index.html",message="invalid isbn")
-                year = r[1][6][0][4].text
-                title = r[1][6][0][8][1].text
-                author = r[1][6][0][8][2][1].text
+                url = f"https://www.googleapis.com/books/v1/volumes?q={isbn}"
+                bookinfo=requests.get(url).json()
 
+                if bookinfo['totalItems']>0:
+                    #print(bookinfo)
+                    bookinfo = bookinfo['items'][0]['volumeInfo']
 
-                #import to books table
+                    author = bookinfo['authors'][0]
+                    title = bookinfo['title']
+                    year = bookinfo['publishedDate'].split('-')[0]
+                else:
+                    return render_template("index.html",message="err: invalid isbn")
+
+                    #import to books table
                 db.execute("INSERT INTO books (isbn, title, author, year) VALUES (:isbn, :title, :author, :year)",
-                    {"isbn": isbn,
-                    "title": title,
-                    "author": author,
-                    "year": year})
+                {"isbn": isbn,
+                "title": title,
+                "author": author,
+                "year": year})
                 db.commit()
                 print("added",isbn,title,author,year)
 
-                        #redirect user to book page
+                #redirect user to book page
                 return book(isbn)
             except Exception as e:
                 return render_template("index.html",message=str(e))
