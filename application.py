@@ -108,29 +108,33 @@ def add_book():
             isbn = request.args.get("isbn")
 
             #fetch data from GOODREADS
-            key = os.getenv("GOODREADS_KEY")
-            url = f"https://www.goodreads.com/search/index.xml?key={key}&q={isbn}"
-            var_url = urlopen(url)
-            xmldoc = parse(var_url)
-            r = xmldoc.getroot()
-            if r[1][3].text!='1':
-                return render_template("index.html",message="invalid isbn")
-            year = r[1][6][0][4].text
-            title = r[1][6][0][8][1].text
-            author = r[1][6][0][8][2][1].text
+            try:
+                key = os.getenv("GOODREADS_KEY")
+                url = f"https://www.goodreads.com/search/index.xml?key={key}&q={isbn}"
+                var_url = urlopen(url)
+                xmldoc = parse(var_url)
+                r = xmldoc.getroot()
+                if r[1][3].text!='1':
+                    return render_template("index.html",message="invalid isbn")
+                year = r[1][6][0][4].text
+                title = r[1][6][0][8][1].text
+                author = r[1][6][0][8][2][1].text
 
-            #import to books table
-            db.execute("INSERT INTO books (isbn, title, author, year) VALUES (:isbn, :title, :author, :year)",
+
+                #import to books table
+                db.execute("INSERT INTO books (isbn, title, author, year) VALUES (:isbn, :title, :author, :year)",
                     {"isbn": isbn,
-                     "title": title,
-                     "author": author,
-                     "year": year})
-            db.commit()
-            print("added",isbn,title,author,year)
+                    "title": title,
+                    "author": author,
+                    "year": year})
+                db.commit()
+                print("added",isbn,title,author,year)
 
-            #redirect user to book page
-            return book(isbn)
-
+                        #redirect user to book page
+                return book(isbn)
+            except Exception as e:
+                return render_template("index.html",message="book already in database")
+                
 @app.route("/search",methods=["POST","GET"])
 def search():
     if request.method == "GET":
