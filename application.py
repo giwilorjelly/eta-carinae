@@ -5,6 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from passlib.hash import sha256_crypt as hasher
 from urllib.request import urlopen
+from urllib.request import Request
 from xml.etree.ElementTree import parse
 
 app = Flask(__name__)
@@ -111,7 +112,11 @@ def add_book():
             try:
                 key = os.getenv("GOODREADS_KEY")
                 url = f"https://www.goodreads.com/search/index.xml?key={key}&q={isbn}"
-                var_url = urlopen(url)
+
+                headers = dict()
+                headers['User-Agent'] = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:76.0) Gecko/20100101 Firefox/76.0'
+                req = Request(url,headers=headers)
+                var_url = urlopen(request)
                 xmldoc = parse(var_url)
                 r = xmldoc.getroot()
                 if r[1][3].text!='1':
