@@ -102,7 +102,7 @@ def add_book():
         return render_template("index.html",message="err: empty isbn query")
     else:
         isbnExisting = db.execute("SELECT * FROM books WHERE isbn LIKE :query",{"query":request.args.get("isbn")}).fetchone()
-        print(isbnExisting)
+        #print(isbnExisting)
         if isbnExisting:
             return render_template("index.html",message="book already in database")
         else:
@@ -113,10 +113,7 @@ def add_book():
                 key = os.getenv("GOODREADS_KEY")
                 url = f"https://www.goodreads.com/search/index.xml?key={key}&q={isbn}"
 
-                headers = dict()
-                headers['User-Agent'] = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:76.0) Gecko/20100101 Firefox/76.0'
-                req = Request(url,headers=headers)
-                var_url = urlopen(request)
+                var_url = urlopen(url)
                 xmldoc = parse(var_url)
                 r = xmldoc.getroot()
                 if r[1][3].text!='1':
