@@ -4,7 +4,8 @@ from flask_session import Session
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from passlib.hash import sha256_crypt as hasher
-
+from urllib.request import urlopen
+from xml.etree.ElementTree import parse
 
 app = Flask(__name__)
 
@@ -24,7 +25,10 @@ db = scoped_session(sessionmaker(bind=engine))
 
 @app.route("/")
 def index():
-    return render_template("index.html", messages="your search results will appear here")
+    if request.method == "GET":
+        results = db.execute("SELECT isbn, title, author, year FROM BOOKS ORDER BY RANDOM() LIMIT 20")
+        books = results.fetchall()
+        return render_template("index.html",mode = "Recommended",books=books)
 
 @app.route("/sign_in",methods=['GET','POST'])
 def sign_in():
@@ -91,13 +95,53 @@ def register():
     #for get
     return render_template("register.html",message="")
 
-@app.route("/search",methods=["GET"])
+@app.route("/add_book",methods=["GET"])
+def add_book():
+    if not request.args.get("isbn"):
+        return render_template("index.html",message="err: empty isbn query")
+    else:
+        isbnExisting = db.execute("SELECT * FROM books WHERE isbn LIKE :query",{"query":request.args.get("isbn")}).fetchone()
+        print(isbnExisting)
+        if isbnExisting:
+            return render_template("index.html",message="book already in database")
+        else:
+            isbn = request.args.get("isbn")
+
+            #fetch data from GOODREADS
+            key = os.getenv("GOODREADS_KEY")
+            url = f"https://www.goodreads.com/search/index.xml?key={key}&q={isbn}"
+            var_url = urlopen(url)
+            xmldoc = parse(var_url)
+            r = xmldoc.getroot()
+            if r[1][3].text!='1':
+                return render_template("index.html",message="invalid isbn")
+            year = r[1][6][0][4].text
+            title = r[1][6][0][8][1].text
+            author = r[1][6][0][8][2][1].text
+
+            #import to books table
+            db.execute("INSERT INTO books (isbn, title, author, year) VALUES (:isbn, :title, :author, :year)",
+                    {"isbn": isbn,
+                     "title": title,
+                     "author": author,
+                     "year": year})
+            db.commit()
+            print("added",isbn,title,author,year)
+
+            #redirect user to book page
+            return book(isbn)
+
+@app.route("/search",methods=["POST","GET"])
 def search():
-    if not request.args.get("book"):
+    if request.method == "GET":
+        return index()
+
+    if not request.form.get("book"):
         return render_template("index.html",message="err: empty search query")
 
+
     #capitalizing query and adding wild character
-    query = "%" + request.args.get("book") + "%"
+    query = "%" + request.form.get("book") + "%"
     query = query.title()
 
     results = db.execute("SELECT isbn, title, author, year FROM books WHERE isbn LIKE :query OR title LIKE :query OR author LIKE :query LIMIT 20",{"query":query})

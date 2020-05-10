@@ -17,7 +17,7 @@
         -Giwil
       </div>
 
-      <form action="/search" method="GET">
+      <form action="/search" method="post">
       <div class="form-group">
         <label style="color:blue">Search for a Book</label>
         <input type="text" class="form-control" name="book" placeholder="eg.Cosmos"/>
@@ -28,8 +28,19 @@
     </div>
 
     <div class="container">
+      {% if mode %}
+      <div class="h3">{{mode}}<br></div>
+      {% else %}
       <div class="h3">Search Results<br></div>
+      <form action="/add_book" method="get">
+      <div class="form-group">
+        <label style="color:blue">Add book to database :)</label>
+        <input type="text" class="form-control" name="isbn" placeholder="Enter ISBN"/>
+      </div>
 
+      <button type="submit" class="btn btn-primary">Add</button>
+      </form>
+      {% endif %}
       <div class="h6">{{messages}}</div>
       <div class="dropdown-divider"></div>
 
