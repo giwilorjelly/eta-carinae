@@ -133,8 +133,8 @@ def add_book():
                         #redirect user to book page
                 return book(isbn)
             except Exception as e:
-                return render_template("index.html",message="book already in database")
-                
+                return render_template("index.html",message=str(e))
+
 @app.route("/search",methods=["POST","GET"])
 def search():
     if request.method == "GET":
