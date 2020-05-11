@@ -8,7 +8,7 @@
 
 <div class="container">
   <div class="row">
-    <div class="col-md-12 bg-light p-5 my-5">
+    <div class="col-md-12 bg-light p-5 my-5 rounded">
     <div class="media">
       <img class="mr-3" src="http://covers.openlibrary.org/b/isbn/{{bookinfo[0]['isbn']}}-M.jpg" width="130px" alt="Generic placeholder image">
         <div class="media-body">
@@ -55,14 +55,14 @@
 </div>
 
 <div class="container">
-  <h3>Reviews</h3>
-  <h6>{{message}}</h6>
-  <div class="row">
-    <div class="col-md-12 bg-light p-5 my-5">
 
+  <div class="row">
+    <div class="col-md-12 p-5 my-5 bg-light rounded">
+      <h3>Reviews</h3>
+      <h6>{{message}}</h6>
     {% for review in reviews %}
         <hr class="dotted">
-    <div class="media">
+    <div class="media bg-light">
         <div class="media-body">
           <h6 class="mt-0">{{review['username']}} says...</h6>
           <p>{{review['content']}}<br>{{review['date']}}</p>
