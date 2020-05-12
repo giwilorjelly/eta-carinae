@@ -101,43 +101,47 @@ def add_book():
     if not request.args.get("isbn"):
         return render_template("index.html",message="err: empty isbn query")
     else:
-        isbnExisting = db.execute("SELECT * FROM books WHERE isbn LIKE :query",{"query":request.args.get("isbn")}).fetchone()
-        #print(isbnExisting)
-        if isbnExisting:
-            return render_template("index.html",message="book already in database")
-        else:
-            isbn = request.args.get("isbn")
+        isbn = request.args.get("isbn")
+        #fetch data from GOODREADS
+        try:
 
-            #fetch data from GOODREADS
-            try:
+            url = f"https://www.googleapis.com/books/v1/volumes?q={isbn}"
+            bookinfo=requests.get(url).json()
 
-                url = f"https://www.googleapis.com/books/v1/volumes?q={isbn}"
-                bookinfo=requests.get(url).json()
+            if bookinfo['totalItems']>0:
+                #print(bookinfo)
+                bookinfo = bookinfo['items'][0]['volumeInfo']
+                isbn = bookinfo['industryIdentifiers'][0]['identifier']
+                author = bookinfo['authors'][0]
+                title = bookinfo['title']
+                year = bookinfo['publishedDate'].split('-')[0]
 
-                if bookinfo['totalItems']>0:
-                    #print(bookinfo)
-                    bookinfo = bookinfo['items'][0]['volumeInfo']
-                    isbn = bookinfo['industryIdentifiers'][0]['identifier']
-                    author = bookinfo['authors'][0]
-                    title = bookinfo['title']
-                    year = bookinfo['publishedDate'].split('-')[0]
-                    #import to books table
-                    db.execute("INSERT INTO books (isbn, title, author, year) VALUES (:isbn, :title, :author, :year)",
-                    {"isbn": isbn,
-                    "title": title,
-                    "author": author,
-                    "year": year})
-                    db.commit()
-                    print("added",(isbn,title,author,year))
-
-                else:
-                    return render_template("index.html",message="err: invalid isbn")
+                isbnExisting = db.execute("SELECT title, author, year FROM books WHERE title LIKE :title AND author LIKE :author AND year LIKE :year LIMIT 20",{'title':title,'year':year,'author':author}).fetchone()
+                print(isbn,title,author,year)
+                if isbnExisting:
+                    return render_template("index.html",message="book already in database")
 
 
-                #redirect user to book page
-                return book(isbn)
-            except Exception as e:
-                return render_template("index.html",message=str(e))
+                #import to books table
+                db.execute("INSERT INTO books (isbn, title, author, year) VALUES (:isbn, :title, :author, :year)",
+                {"isbn": isbn,
+                "title": title,
+                "author": author,
+                "year": year})
+                db.commit()
+                print("added",(isbn,title,author,year))
+
+
+
+            else:
+                return render_template("index.html",message="err: invalid isbn")
+
+
+            #redirect user to book page
+            return book(isbn)
+
+        except Exception as e:
+            return render_template("index.html",message=str(e))
 
 @app.route("/search",methods=["POST","GET"])
 def search():
