@@ -117,21 +117,22 @@ def add_book():
                 if bookinfo['totalItems']>0:
                     #print(bookinfo)
                     bookinfo = bookinfo['items'][0]['volumeInfo']
-
+                    isbn = bookinfo['industryIdentifiers'][0]['identifier']
                     author = bookinfo['authors'][0]
                     title = bookinfo['title']
                     year = bookinfo['publishedDate'].split('-')[0]
+                    #import to books table
+                    db.execute("INSERT INTO books (isbn, title, author, year) VALUES (:isbn, :title, :author, :year)",
+                    {"isbn": isbn,
+                    "title": title,
+                    "author": author,
+                    "year": year})
+                    db.commit()
+                    print("added",(isbn,title,author,year))
+
                 else:
                     return render_template("index.html",message="err: invalid isbn")
 
-                    #import to books table
-                db.execute("INSERT INTO books (isbn, title, author, year) VALUES (:isbn, :title, :author, :year)",
-                {"isbn": isbn,
-                "title": title,
-                "author": author,
-                "year": year})
-                db.commit()
-                print("added",isbn,title,author,year)
 
                 #redirect user to book page
                 return book(isbn)
@@ -162,6 +163,7 @@ def search():
 
 @app.route("/book/<isbn>",methods=["GET","POST"])
 def book(isbn):
+    print("opening ISBN: ",isbn)
     if request.method == "GET":
 
         """preparing book data"""
